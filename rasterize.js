@@ -75,20 +75,37 @@ function loadTriangles() {
         var whichSetVert; // index of vertex in current triangle set
         var whichSetTri; // index of triangle in current triangle set
         var coordArray = []; // 1D array of vertex coords for WebGL
+        var triArray = [];
+        triBufferSize = 0;
         
         for (var whichSet=0; whichSet<inputTriangles.length; whichSet++) {
+            var startingIndex = coordArray.length / 3;
             
             // set up the vertex coord array
             for (whichSetVert=0; whichSetVert<inputTriangles[whichSet].vertices.length; whichSetVert++){
                 coordArray = coordArray.concat(inputTriangles[whichSet].vertices[whichSetVert]);
-                // console.log(inputTriangles[whichSet].vertices[whichSetVert]);
             }
-        } // end for each triangle set 
+
+            // set up the triangle array
+            for (whichSetTri=0; whichSetTri < inputTriangles[whichSet].triangles.length; whichSetTri++){
+                triArray.push(inputTriangles[whichSet].triangles[whichSetTri][0] + startingIndex);
+                triArray.push(inputTriangles[whichSet].triangles[whichSetTri][1] + startingIndex);
+                triArray.push(inputTriangles[whichSet].triangles[whichSetTri][2] + startingIndex);
+            }
+
+            triBufferSize += inputTriangles[whichSet].triangles.length;
+        } // end for each triangle set
         // console.log(coordArray.length);
         // send the vertex coords to webGL
         vertexBuffer = gl.createBuffer(); // init empty vertex coord buffer
         gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer); // activate that buffer
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(coordArray),gl.STATIC_DRAW); // coords to that buffer
+
+        triangleBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triArray), gl.STATIC_DRAW);
+
+        triBufferSize *= 3;
         
     } // end if triangles found
 } // end load triangles
@@ -159,7 +176,11 @@ function renderTriangles() {
     gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer); // activate
     gl.vertexAttribPointer(vertexPositionAttrib,3,gl.FLOAT,false,0,0); // feed
 
-    gl.drawArrays(gl.TRIANGLES,0,3); // render
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffer);
+
+    console.log(triBufferSize);
+
+    gl.drawElements(gl.TRIANGLES,triBufferSize, gl.UNSIGNED_SHORT, 0); // render
 } // end render triangles
 
 
